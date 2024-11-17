@@ -1,0 +1,142 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="container mt-5">
+    {% if own_page %}
+    <h1 class="text-center">Welcome, {{ user.username }}</h1>
+    {% else %}
+    <h1 class="text-center">{{ user.username }}</h1>
+    {% endif %}
+
+    <div class="text-center my-4">
+        <img 
+            src="{{ user.photo_url or 'https://via.placeholder.com/150' }}" 
+            alt="Avatar" 
+            class="rounded-circle" 
+            style="width: 150px; height: 150px; object-fit: cover;">
+    </div>
+
+    <div class="text-center mb-4">
+        <p><strong>Email:</strong> {{ user.email }}</p>
+    </div>
+
+    <h2 class="mt-4">
+        Social Networks
+    </h2>
+    {% if own_page %}
+    <!-- Button to trigger modal -->
+    <button class="btn btn-primary w-100 mb-3" data-bs-toggle="modal" data-bs-target="#addSocialModal">Add Social Network</button>
+    {% endif %}
+
+    {% if social_links %}
+        <ul class="list-group">
+            {% for link in social_links %}
+                <li class="list-group-item">
+                    <strong>{{ link.platform }}:</strong>
+                    <a href="{{ link.link }}" target="_blank">{{ link.link }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No social networks added.</p>
+    {% endif %}
+
+    {% if own_page and incoming_requests %}
+    <h2 class="mt-5">Pending Interaction Requests</h2>
+        <ul class="list-group">
+            {% for req in incoming_requests %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ req[3] }}</strong> requested <strong>{{ req.username }}</strong>
+                        {% if req.message %}
+                            <p><em>Message:</em> {{ req.message }}</p>
+                        {% endif %}
+                    </div>
+                    <form method="POST" action="{{ url_for('approve_request', request_id=req.id) }}">
+                        <button type="submit" class="btn btn-success">Approve</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if not own_page %}
+    <h2 class="mt-4">Request Interaction</h2>
+    <!-- Button to trigger modal -->
+    <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#interactionModal">
+        Request Interaction
+    </button>
+    {% endif %}
+
+    <h2 class="mt-4">Interaction Statistics</h2>
+    {% if stats %}
+        <ul class="list-group">
+            {% for stat in stats %}
+                <li class="list-group-item">
+                    <strong>{{ stat.type }}:</strong> {{ stat.count }} interactions
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No interactions recorded yet.</p>
+    {% endif %}
+
+    <!-- Modal for Adding Social Network -->
+    <div class="modal fade" id="addSocialModal" tabindex="-1" aria-labelledby="addSocialModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('dashboard') }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addSocialModalLabel">Add Social Network</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="platform" class="form-label">Platform</label>
+                            <input type="text" class="form-control" id="platform" name="platform" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="link" class="form-label">Link</label>
+                            <input type="url" class="form-control" id="link" name="link" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Interaction Request Modal -->
+    <div class="modal fade" id="interactionModal" tabindex="-1" aria-labelledby="interactionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('request_interaction', target_id=user.id) }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="interactionModalLabel">Request an Interaction</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="interactionType" class="form-label">Interaction Type</label>
+                            <select class="form-select" id="interactionType" name="interaction_type" required>
+                                {% for interaction_type in interaction_types %}
+                                    <option value="{{ interaction_type.id }}" title="{{ interaction_type.description }}">{{ interaction_type.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message (Optional)</label>
+                            <textarea class="form-control" id="message" name="message" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Send Request</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

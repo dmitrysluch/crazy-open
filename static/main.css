@@ -1,0 +1,58 @@
+body {
+    background-image: linear-gradient(90deg, #020024, #851d7b, #9c014c, #ab5b06 100%); 
+}
+
+.hero {
+    color: #ffffff;
+    text-align: center;
+    padding: 100px 20px 0px;
+}
+.hero img {
+    max-width: 300px;
+    margin-bottom: 20px;
+}
+.cta-btn {
+    background-color: #ffc107;
+    color: #343a40;
+    font-weight: bold;
+    border: none;
+    padding: 15px;
+    font-size: 1.5rem;
+}
+.cta-btn:hover {
+    background-color: #e0a800;
+    color: #ffffff;
+}
+
+.node circle {
+    fill: #f4ab35;
+    /* stroke: rgb(237, 15, 229); */
+    stroke-width: 1.5px;
+}
+
+.node text {
+    font-size: 12px;
+    font-family: sans-serif;
+    fill: #f4ab35;
+}
+
+.link {
+    stroke: white;
+    stroke-opacity: 0.6;
+}
+
+.zoom-rect {
+    fill: none;
+    pointer-events: all;
+}
+
+#graph {
+    background: rgba(5, 15, 60, 0.731);
+    display: block;
+    margin: auto;
+    border-radius: 5px;
+}
+
+/* .navbar-primary {
+    background: #093f94 !important;
+} */

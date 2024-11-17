@@ -1,0 +1,104 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<div class="container mt-3" style="overflow: hidden;" id="container">
+    <h1 class="text-center">S3X Graph</h1>
+    <svg width="1000" height="800" id="graph"></svg>
+</div>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+    // Graph data (injected via Flask)
+    const nodes = {{ nodes|tojson }};
+    const links = {{ links|tojson }};
+
+    const width = 1000;
+    const height = 800;
+
+    // Create SVG container
+    const svg = d3.select("svg#graph")
+        .attr("width", width)
+        .attr("height", height)
+        .call(
+            d3.zoom().on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            })
+        );
+
+    // Create a group for zoomable content
+    const g = svg.append("g");
+
+    // Draw links
+    const link = g.selectAll(".link")
+        .data(links)
+        .enter()
+        .append("line")
+        .attr("class", "link")
+        .style("stroke-width", 1);
+
+// Draw nodes
+const node = g.selectAll(".node")
+    .data(nodes)
+    .enter()
+    .append("g")
+    .attr("class", "node")
+    .on("click", (event, d) => {
+        window.location.href = `/dashboard?user_id=${d.id}`;
+    });
+
+// Define circular clip-path for avatars
+const defs = svg.append("defs");
+defs.append("clipPath")
+    .attr("id", "circle-clip")
+    .append("circle")
+    .attr("r", 20) // Radius of the avatar
+    .attr("cx", 0)
+    .attr("cy", 0);
+
+// Add avatar images to nodes
+node.append("image")
+    .attr("xlink:href", (d) => d.avatar || "https://via.placeholder.com/40") // Default avatar if none provided
+    .attr("width", 40) // Image size
+    .attr("height", 40)
+    .attr("x", -20) // Center the image
+    .attr("y", -20)
+    .attr("clip-path", "url(#circle-clip)"); // Apply the circular clip-path
+
+// Add labels to nodes
+node.append("text")
+    .attr("x", 25) // Position label to the right of the avatar
+    .attr("y", 5)
+    .text((d) => d.name)
+    .attr("font-size", "12px")
+    .attr("font-family", "sans-serif");
+
+// Force simulation
+const simulation = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id((d) => d.id))
+    .force("charge", d3.forceManyBody().strength(-300))
+    .force("center", d3.forceCenter(width / 2, height / 2));
+
+simulation.on("tick", () => {
+    link
+        .attr("x1", (d) => d.source.x)
+        .attr("y1", (d) => d.source.y)
+        .attr("x2", (d) => d.target.x)
+        .attr("y2", (d) => d.target.y);
+
+    node.attr("transform", (d) => `translate(${d.x},${d.y})`);
+});
+
+function resizeSVG() {
+    const width = document.getElementById("container").offsetWidth;
+    const height = window.innerHeight - 100;
+
+    // Adjust SVG dimensions
+    svg.attr("width", width).attr("height", height);
+}
+
+// Call resizeSVG on page load
+resizeSVG();
+
+// Add event listener to resize SVG dynamically on window resize
+window.addEventListener("resize", resizeSVG);
+</script>
+{% endblock %}
