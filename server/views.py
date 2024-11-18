@@ -5,7 +5,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask import flash, render_template, redirect, url_for, request
 from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from functools import wraps
+import uuid
+from PIL import Image
+import base64
+from io import BytesIO
 
 def logged_out_only(view_function):
     @wraps(view_function)
@@ -30,18 +35,40 @@ def register():
         password = generate_password_hash(form.password.data)
         
         # Handle optional photo
-        photo_url = None
+        avatar_url = ""
         if form.photo.data:
-            # Save the uploaded photo (e.g., to static/uploads directory)
-            photo = form.photo.data
-            photo_filename = f"{username}_{photo.filename}"
-            photo.save(f"/static/uploads/{photo_filename}")
-            photo_url = f"/static/uploads/{photo_filename}"
+            try:
+                # Decode Base64 data
+                avatar_data = form.photo.data.split(",")[1]  # Remove the Base64 header
+                avatar_bytes = base64.b64decode(avatar_data)
+    
+                # Load the image with Pillow
+                img = Image.open(BytesIO(avatar_bytes))
+    
+                # Save the processed image
+                avatar_path = f'static/uploads/{uuid.uuid4().hex}.png'
+                avatar_url = "/" + avatar_path
+                img.save(avatar_path, 'PNG')
+    
+            except Exception as e:
+                flash(f"Failed to process avatar", "danger")
 
         # Add user to the database
-        new_user = User(username=username, email=email, password_hash=password, photo_url=photo_url)
-        db.session.add(new_user)
-        db.session.commit()
+        new_user = User(username=username, email=email, password_hash=password, photo_url=avatar_url)
+
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()  # Rollback the session to prevent conflicts
+            # Check which field caused the issue
+            if User.query.filter_by(username=username).first():
+                flash("Username is already taken. Please choose a different one.", "danger")
+            elif User.query.filter_by(email=email).first():
+                flash("Email is already registered. Please use a different email.", "danger")
+            else:
+                flash("An unexpected error occurred. Please try again.", "danger")
+            return render_template('register.html', form=form)
 
         flash('Registration successful!', 'success')
 

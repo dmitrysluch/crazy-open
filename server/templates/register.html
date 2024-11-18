@@ -36,11 +36,11 @@
             {% endfor %}
         </div>
         <div class="mb-3">
-            {{ form.photo.label(class="form-label") }}
-            {{ form.photo(class="form-control") }}
-            {% for error in form.photo.errors %}
-            <div class="text-danger">{{ error }}</div>
-            {% endfor %}
+            <label for="avatar-input" class="form-label">Profile Picture (Optional)</label>
+            <input type="file" id="avatar-input" accept="image/*" class="form-control">
+            <canvas id="avatar-canvas" style="display: none;"></canvas>
+            <img id="avatar-preview" class="preview my-2 rounded-circle" src="/static/placeholder.png" alt="Avatar Preview">
+            {{ form.photo() }}
         </div>
         <div class="text-center">
             {{ form.submit(class="btn btn-primary w-100") }}
@@ -48,4 +48,41 @@
     </form>
     </div>
 </div>
+<script>
+    document.getElementById("avatar-input").addEventListener("change", function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = new Image();
+            img.onload = function () {
+                const canvas = document.getElementById("avatar-canvas");
+                const ctx = canvas.getContext("2d");
+
+                // Set canvas size to 200x200
+                canvas.width = 200;
+                canvas.height = 200;
+
+                // Calculate cropping region (center crop to square)
+                const size = Math.min(img.width, img.height);
+                const sx = (img.width - size) / 2;
+                const sy = (img.height - size) / 2;
+
+                // Draw cropped and resized image
+                ctx.drawImage(img, sx, sy, size, size, 0, 0, 200, 200);
+
+                // Update preview
+                const preview = document.getElementById("avatar-preview");
+                preview.src = canvas.toDataURL("image/png");
+
+                // Save base64 data for form submission
+                const avatarData = document.getElementById("photo");
+                avatarData.value = canvas.toDataURL("image/png");
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+</script>
 {% endblock %}

@@ -56,3 +56,9 @@ body {
 /* .navbar-primary {
     background: #093f94 !important;
 } */
+
+#avatar-preview {
+    margin: auto;
+    display: block;
+    max-height: 200px;
+}
