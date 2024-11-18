@@ -46,8 +46,8 @@ def register():
                 img = Image.open(BytesIO(avatar_bytes))
     
                 # Save the processed image
-                avatar_path = f'static/uploads/{uuid.uuid4().hex}.png'
-                avatar_url = "/" + avatar_path
+                avatar_path = f'/static/uploads/{uuid.uuid4().hex}.png'
+                avatar_url = avatar_path
                 img.save(avatar_path, 'PNG')
     
             except Exception as e:
