@@ -1,3 +1,7 @@
+from gevent import monkey
+
+monkey.patch_all()
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -16,6 +20,7 @@ app.static_folder="../static"
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///crazy-open.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'Crazy open')
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
 # Initialize SQLAlchemy and Migrate
 db.init_app(app)

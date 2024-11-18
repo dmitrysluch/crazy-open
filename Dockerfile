@@ -10,4 +10,4 @@ RUN mkdir -p ~/.postgresql && \
     chmod 0600 ~/.postgresql/root.crt
 
 WORKDIR /server
-ENTRYPOINT gunicorn --bind 0.0.0.0:8000 wsgi:app
+ENTRYPOINT gunicorn --worker-class gevent --bind 0.0.0.0:8000 wsgi:app
