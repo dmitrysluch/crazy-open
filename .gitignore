@@ -162,3 +162,5 @@ cython_debug/
 #.idea/
 
 local_migrations
+certbot
+static/uploads
