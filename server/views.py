@@ -35,8 +35,8 @@ def register():
             # Save the uploaded photo (e.g., to static/uploads directory)
             photo = form.photo.data
             photo_filename = f"{username}_{photo.filename}"
-            photo.save(f"static/uploads/{photo_filename}")
-            photo_url = f"static/uploads/{photo_filename}"
+            photo.save(f"/static/uploads/{photo_filename}")
+            photo_url = f"/static/uploads/{photo_filename}"
 
         # Add user to the database
         new_user = User(username=username, email=email, password_hash=password, photo_url=photo_url)
