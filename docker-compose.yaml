@@ -10,7 +10,7 @@ services:
       - 8000
     environment:
       - FLASK_ENV=production
-      - SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI}
+      - DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./static:/static
 
