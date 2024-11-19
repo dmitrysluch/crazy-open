@@ -139,7 +139,9 @@
     }
 
     // Initial graph rendering
-    fetchInteractions([]);
+    const selectedCheckboxes = document.querySelectorAll(".interaction-checkbox:checked");
+    const type_ids = Array.from(selectedCheckboxes).map(cb => cb.value);
+    fetchInteractions(type_ids);
 
     // Handle checkbox changes
     document.getElementById("interaction-filter").addEventListener("change", function () {
