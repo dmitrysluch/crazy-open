@@ -36,7 +36,7 @@
 <script>
     // Graph data (injected via Flask)
     const nodes = {{ nodes|tojson }};
-    const links = [];
+    let curr_links = [];
 
     const width = 1000;
     const height = 800;
@@ -53,14 +53,7 @@
 
     // Create a group for zoomable content
     const g = svg.append("g");
-
-    // Draw links
-    const link = g.selectAll(".link")
-        .data(links, d => `${d.source}-${d.target}`)
-        .enter()
-        .append("line")
-        .attr("class", "link")
-        .style("stroke-width", 1);
+    const lg = g.append("g");
 
     // Draw nodes
     const node = g.selectAll(".node")
@@ -100,11 +93,12 @@
     
     // Force simulation
     const simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id((d) => d.id))
+        .force("link", d3.forceLink(curr_links).id((d) => d.id))
         .force("charge", d3.forceManyBody().strength(-300))
         .force("center", d3.forceCenter(width / 2, height / 2));
     
     simulation.on("tick", () => {
+        const link = lg.selectAll(".link").data(curr_links, d => `${d.source}-${d.target}`)
         link.attr("x1", (d) => d.source.x)
             .attr("y1", (d) => d.source.y)
             .attr("x2", (d) => d.target.x)
@@ -115,7 +109,7 @@
 
     function updateGraph(links) {
         // Update links
-        const updatedLinks = g.selectAll(".link")
+        const updatedLinks = lg.selectAll(".link")
             .data(links, d => `${d.source}-${d.target}`);
         updatedLinks.exit().remove();
         updatedLinks.enter()
@@ -123,8 +117,10 @@
             .attr("class", "link")
             .style("stroke-width", 1);
 
+        curr_links = links
+
         simulation.nodes(nodes);
-        simulation.force("link").links(links);
+        simulation.force("link").links(links).distance(100);
         simulation.alpha(1).restart();
     }
 
