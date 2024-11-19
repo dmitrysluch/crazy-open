@@ -177,13 +177,14 @@ def interactions():
     # Get the list of interaction type IDs from the request
     type_ids = request.args.getlist('type_id')
 
-    # Query interactions filtered by type if provided
-    query = Interaction.query
     if type_ids:
+        # Query interactions filtered by type if provided
+        query = Interaction.query
         query = query.filter(Interaction.type_id.in_(type_ids))
-
-    # Ensure unique edges between nodes
-    interactions = query.all()
+        interactions = query.all()
+    else:
+        interactions = []
+    
     unique_edges = {}
     for interaction in interactions:
         pair = tuple(sorted([interaction.user_1_id, interaction.user_2_id]))

@@ -19,7 +19,11 @@
                             type="checkbox" 
                             class="form-check-input interaction-checkbox" 
                             id="type-{{ interaction_type.id }}" 
-                            value="{{ interaction_type.id }}">
+                            value="{{ interaction_type.id }}"
+                            {% if interaction_type.name not in ['Handshake', 'Kiss', 'Hug'] %}
+                            checked
+                            {% endif %}
+                            >
                         <label class="form-check-label" for="type-{{ interaction_type.id }}">{{ interaction_type.name }}</label>
                     </div>
                 {% endfor %}
