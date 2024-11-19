@@ -2,7 +2,7 @@ from wsgi import app
 from models import db, User, SocialLink, InteractionType, InteractionRequest, Interaction
 from forms import RegistrationForm, LoginForm
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import flash, render_template, redirect, url_for, request
+from flask import flash, render_template, redirect, url_for, request, jsonify
 from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
@@ -166,16 +166,32 @@ def dashboard():
 def graph():
     # Fetch all users and interactions
     users = User.query.all()
-    interactions = Interaction.query.all()
-
-    # Prepare data for graph
     nodes = [{"id": user.id, "name": user.username, "avatar": user.photo_url } for user in users]
-    links = [
-        {"source": interaction.user_1_id, "target": interaction.user_2_id}
-        for interaction in interactions
-    ]
+    interaction_types = InteractionType.query.all()
 
-    return render_template('graph.html', nodes=nodes, links=links)
+    return render_template('graph.html', nodes=nodes, interaction_types=interaction_types)
+
+@app.route('/interactions', methods=['GET'])
+@login_required
+def interactions():
+    # Get the list of interaction type IDs from the request
+    type_ids = request.args.getlist('type_id')
+
+    # Query interactions filtered by type if provided
+    query = Interaction.query
+    if type_ids:
+        query = query.filter(Interaction.type_id.in_(type_ids))
+
+    # Ensure unique edges between nodes
+    interactions = query.all()
+    unique_edges = {}
+    for interaction in interactions:
+        pair = tuple(sorted([interaction.user_1_id, interaction.user_2_id]))
+        if pair not in unique_edges:
+            unique_edges[pair] = {"source": pair[0], "target": pair[1], "type_id": interaction.type_id}
+
+    links = list(unique_edges.values())
+    return jsonify(links)
 
 @app.route('/request_interaction/<int:target_id>', methods=['POST'])
 @login_required
