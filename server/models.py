@@ -16,6 +16,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     email_visibility = db.Column(SQLAlchemyEnum(VisibilityState), default=VisibilityState.SEARCH_ONLY, nullable=False)
+    email_verified = db.Column(db.Boolean, default=False, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     photo_url = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

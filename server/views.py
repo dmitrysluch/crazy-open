@@ -1,4 +1,4 @@
-from wsgi import app
+from wsgi import app, serializer
 from models import db, User, SocialLink, InteractionType, InteractionRequest, Interaction, VisibilityState
 from forms import RegistrationForm, LoginForm
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,12 +11,23 @@ import uuid
 from PIL import Image
 import base64
 from io import BytesIO
+from utils import send_verification_email
 
 def logged_out_only(view_function):
     @wraps(view_function)
     def decorated_function(*args, **kwargs):
         if current_user.is_authenticated:
             return redirect(url_for('dashboard'))  # Replace 'home' with your desired route
+        return view_function(*args, **kwargs)
+    return decorated_function
+
+def verified_only(view_function):
+    @login_required
+    @wraps(view_function)
+    def decorated_function(*args, **kwargs):
+        if not current_user.email_verified:
+            flash("You have been sent verification email. Follow the link to use the service")
+            return redirect(url_for('unverified'))  # Replace 'home' with your desired route
         return view_function(*args, **kwargs)
     return decorated_function
 
@@ -70,13 +81,38 @@ def register():
                 flash("An unexpected error occurred. Please try again.", "danger")
             return render_template('register.html', form=form)
 
-        flash('Registration successful!', 'success')
+        flash('You have been sent a verification email. Follow the link to verify.', 'success')
 
         login_user(new_user)
+        send_verification_email(new_user)
 
-        return redirect(url_for('dashboard'))  # Redirect to graph page
+        return redirect(url_for('unverified'))  # Redirect to graph page
 
     return render_template('register.html', form=form)
+
+@app.route('/unverified', methods=['GET', 'POST'])
+@login_required
+def unverified():
+    if current_user.email_verified:
+        return redirect(url_for('dashboard'))  # Redirect if already verified
+    if request.method == 'POST':
+        send_verification_email(current_user)
+        flash("Verification email has been resent.", "success")
+    return render_template('unverified.html')
+
+@app.route('/verify_email/<token>')
+def verify_email(token):
+    try:
+        email = serializer.loads(token, salt='email-confirmation', max_age=3600)  # Token expires in 1 hour
+        user = User.query.filter_by(email=email).first_or_404()
+        user.email_verified = True
+        db.session.commit()
+        flash("Email verified successfully", "success")
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        flash("Verification link expired", "danger")
+        return redirect(url_for('unverified'))
+
 
 @app.route('/login', methods=['GET', 'POST'])
 @logged_out_only
@@ -103,7 +139,7 @@ def logout():
     return redirect(url_for('register'))  # Redirect to register or login page
 
 @app.route('/dashboard', methods=['GET', 'POST'])
-@login_required
+@verified_only
 def dashboard():
     if request.method == 'POST':
         platform = request.form.get('platform')
@@ -131,6 +167,7 @@ def dashboard():
         social_links = SocialLink.query.filter_by(user_id=user.id) \
             .filter_by(visibility=VisibilityState.VISIBLE).all()
 
+    social_links = sorted(social_links, key=lambda x: x.platform)
     # Fetch interaction statistics
     interaction_stats = (
         db.session.query(Interaction.type_id, InteractionType.name, func.count(Interaction.id))
@@ -166,7 +203,7 @@ def dashboard():
     )
 
 @app.route('/update_visibility', methods=['POST'])
-@login_required
+@verified_only
 def update_visibility():
     item = request.args.get('item')
     visibility = request.form.get('visibility')
@@ -191,7 +228,7 @@ def update_visibility():
 
 
 @app.route('/graph')
-@login_required
+@verified_only
 def graph():
     # Fetch all users and interactions
     users = User.query.all()
@@ -201,7 +238,7 @@ def graph():
     return render_template('graph.html', nodes=nodes, interaction_types=interaction_types)
 
 @app.route('/interactions', methods=['GET'])
-@login_required
+@verified_only
 def interactions():
     # Get the list of interaction type IDs from the request
     type_ids = request.args.getlist('type_id')
@@ -224,7 +261,7 @@ def interactions():
     return jsonify(links)
 
 @app.route('/request_interaction/<int:target_id>', methods=['POST'])
-@login_required
+@verified_only
 def request_interaction(target_id):
     interaction_type_id = request.form.get('interaction_type')
     message = request.form.get('message')
@@ -248,7 +285,7 @@ def request_interaction(target_id):
     return redirect(url_for('dashboard') + f"?user_id={target_id}")
 
 @app.route('/approve_request/<int:request_id>', methods=['POST'])
-@login_required
+@verified_only
 def approve_request(request_id):
     # Fetch the interaction request
     interaction_request = InteractionRequest.query.get_or_404(request_id)

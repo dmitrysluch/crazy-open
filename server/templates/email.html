@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crazy Open: Email Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0bdfc;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            color: black;
+        }
+        .header {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .content {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .button {
+            display: block;
+            margin: 20px 0;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #e600bc;
+            text-decoration: none;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="global-container">
+    <div class="email-container">
+        <div class="header">Welcome to Crazy Open!</div>
+        <div class="content">
+            <p>Hi {{ name }},</p>
+            <p>Thank you for joining us in fostering open conversations about intimacy and health. Please click the button below to verify your email address and start exploring your connections.</p>
+            <a href="{{ verification_link }}" class="button">Verify Email</a>
+            <p>If you did not sign up for Crazy Open, please ignore this email.</p>
+        </div>
+        <div class="footer">
+            © 2024 Crazy Open Team. All rights reserved.
+        </div>
+    </div>
+    </div>
+</body>
+</html>

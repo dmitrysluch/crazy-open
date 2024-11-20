@@ -11,8 +11,10 @@ services:
     environment:
       - FLASK_ENV=production
       - DATABASE_URL=${DATABASE_URL}
+      - BREVO_API_KEY=${BREVO_API_KEY}
     volumes:
       - ./static:/static
+      - ./migrations:/server/migrations
 
   nginx:
     image: nginx:latest
