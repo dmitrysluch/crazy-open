@@ -1,5 +1,5 @@
 from wsgi import app
-from models import db, User, SocialLink, InteractionType, InteractionRequest, Interaction
+from models import db, User, SocialLink, InteractionType, InteractionRequest, Interaction, VisibilityState
 from forms import RegistrationForm, LoginForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import flash, render_template, redirect, url_for, request, jsonify
@@ -125,7 +125,11 @@ def dashboard():
         user = current_user
         own_page = True
     # Fetch existing social links
-    social_links = SocialLink.query.filter_by(user_id=user.id).all()
+    if own_page:
+        social_links = SocialLink.query.filter_by(user_id=user.id).all()
+    else:   
+        social_links = SocialLink.query.filter_by(user_id=user.id) \
+            .filter_by(visibility=VisibilityState.VISIBLE).all()
 
     # Fetch interaction statistics
     interaction_stats = (
@@ -160,6 +164,31 @@ def dashboard():
         interaction_types=interaction_types,
         incoming_requests=incoming_requests
     )
+
+@app.route('/update_visibility', methods=['POST'])
+@login_required
+def update_visibility():
+    item = request.args.get('item')
+    visibility = request.form.get('visibility')
+
+    if visibility not in ['VISIBLE', 'HIDDEN', 'SEARCH_ONLY']:
+        flash("Invalid visibility option", "danger")
+        return redirect(url_for('dashboard'))
+
+    if item == 'email':
+        current_user.email_visibility = VisibilityState[visibility]
+    elif item == 'social':
+        link_id = request.args.get('id')
+        link = SocialLink.query.get_or_404(link_id)
+        if link.user_id != current_user.id:
+            flash("You are not authorized to edit this link", "danger")
+            return redirect(url_for('dashboard'))
+        link.visibility = VisibilityState[visibility]
+
+    db.session.commit()
+    flash("Visibility updated successfully", "success")
+    return redirect(url_for('dashboard'))
+
 
 @app.route('/graph')
 @login_required

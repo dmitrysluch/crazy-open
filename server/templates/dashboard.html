@@ -15,8 +15,36 @@
             style="width: 150px; height: 150px; object-fit: cover;">
     </div>
 
-    <div class="text-center mb-4">
-        <p><strong>Email:</strong> {{ user.email }}</p>
+    <div class="text-center mb-4 d-flex justify-content-center align-items-baseline">
+        <div><strong>Email:</strong> 
+            {% if own_page or user.email_visibility.name == "VISIBLE" %}
+            {{ user.email }}
+            {% else %}
+            <i>hidden</i>
+            {% endif %}
+        </div>
+        {% if own_page %}
+        <div class="btn-group" role="group" aria-label="Email Visibility">
+            <form method="POST" action="{{ url_for('update_visibility', item='email') }}" style="margin: 0 0.25rem 0 1rem;;">
+                <button type="submit" name="visibility" value="VISIBLE" 
+                        class="btn {% if user.email_visibility.name == 'VISIBLE' %}btn-primary{% else %}btn-outline-primary{% endif %} btn-sm">
+                    Visible
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('update_visibility', item='email') }}" style="margin: 0 0.25rem;">
+                <button type="submit" name="visibility" value="HIDDEN" 
+                        class="btn {% if user.email_visibility.name == 'HIDDEN' %}btn-primary{% else %}btn-outline-primary{% endif %} btn-sm">
+                    Hidden
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('update_visibility', item='email') }}" style="margin: 0 0.25rem;">
+                <button type="submit" name="visibility" value="SEARCH_ONLY" 
+                        class="btn {% if user.email_visibility.name == 'SEARCH_ONLY' %}btn-primary{% else %}btn-outline-primary{% endif %} btn-sm">
+                    Search Only
+                </button>
+            </form>
+        </div>
+        {% endif %}
     </div>
 
     <h2 class="mt-4">
@@ -30,9 +58,37 @@
     {% if social_links %}
         <ul class="list-group">
             {% for link in social_links %}
-                <li class="list-group-item">
-                    <strong>{{ link.platform }}:</strong>
-                    <a href="{{ link.link }}" target="_blank">{{ link.link }}</a>
+                <li class="list-group-item d-flex align-items-baseline justify-content-between">
+                    <div>
+                        <strong>{{ link.platform }}:</strong>
+                        {% if link.link.startswith("http") %}
+                        <a href="{{ link.link }}" target="_blank">{{ link.link }}</a>
+                        {% else %}
+                        {{ link.link }}
+                        {% endif %}
+                    </div>
+                    {% if own_page %}
+                    <div class="btn-group" role="group" aria-label="Social Visibility">
+                        <form method="POST" action="{{ url_for('update_visibility', item='social', id=link.id) }}" style="display: inline;">
+                            <button type="submit" name="visibility" value="VISIBLE" 
+                                    class="btn {% if link.visibility.name == 'VISIBLE' %}btn-primary{% else %}btn-outline-primary{% endif %} btn-sm" style="margin: 0 0.25rem;">
+                                Visible
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('update_visibility', item='social', id=link.id) }}" style="display: inline;">
+                            <button type="submit" name="visibility" value="HIDDEN" 
+                                    class="btn {% if link.visibility.name == 'HIDDEN' %}btn-primary{% else %}btn-outline-primary{% endif %} btn-sm" style="margin: 0 0.25rem;">
+                                Hidden
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('update_visibility', item='social', id=link.id) }}" style="display: inline;">
+                            <button type="submit" name="visibility" value="SEARCH_ONLY" 
+                                    class="btn {% if link.visibility.name == 'SEARCH_ONLY' %}btn-primary{% else %}btn-outline-primary{% endif %} btn-sm" style="margin: 0 0.25rem;">
+                                Search Only
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
                 </li>
             {% endfor %}
         </ul>
@@ -96,7 +152,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="link" class="form-label">Link</label>
-                            <input type="url" class="form-control" id="link" name="link" required>
+                            <input type="text" class="form-control" id="link" name="link" required>
                         </div>
                     </div>
                     <div class="modal-footer">
