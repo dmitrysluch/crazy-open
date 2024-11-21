@@ -98,7 +98,7 @@
         .force("center", d3.forceCenter(width / 2, height / 2));
     
     simulation.on("tick", () => {
-        const link = lg.selectAll(".link").data(curr_links, d => `${d.source}-${d.target}`)
+        const link = lg.selectAll(".link").data(curr_links, d => `${d.source.id}-${d.target.id}`)
         link.attr("x1", (d) => d.source.x)
             .attr("y1", (d) => d.source.y)
             .attr("x2", (d) => d.target.x)
@@ -110,7 +110,7 @@
     function updateGraph(links) {
         // Update links
         const updatedLinks = lg.selectAll(".link")
-            .data(links, d => `${d.source}-${d.target}`);
+            .data(links, d => `${d.source.id}-${d.target.id}`);
         updatedLinks.exit().remove();
         updatedLinks.enter()
             .append("line")
@@ -150,7 +150,6 @@
         const width = document.getElementById("container").clientWidth - 
                       2 * parseFloat(window.getComputedStyle(document.getElementById("container")).paddingLeft);
         const height = window.innerHeight - 100;
-        console.log(width)
         // Adjust SVG dimensions
         svg.attr("width", width).attr("height", height);
     }
