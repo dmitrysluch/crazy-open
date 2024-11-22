@@ -309,3 +309,21 @@ def approve_request(request_id):
 
     flash('Interaction request approved and interaction added!', 'success')
     return redirect(url_for('dashboard'))
+
+@app.route('/decline_request/<int:request_id>', methods=['POST'])
+@verified_only
+def decline_request(request_id):
+    # Fetch the interaction request
+    interaction_request = InteractionRequest.query.get_or_404(request_id)
+
+    # Ensure the current user is the target of the request
+    if interaction_request.target_id != current_user.id:
+        flash('You are not authorized to decline this request.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    # Update the request status
+    interaction_request.status = 'declined'
+    db.session.commit()
+
+    flash('Interaction request declined.', 'info')
+    return redirect(url_for('dashboard'))

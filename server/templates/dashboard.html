@@ -107,9 +107,18 @@
                             <p><em>Message:</em> {{ req.message }}</p>
                         {% endif %}
                     </div>
-                    <form method="POST" action="{{ url_for('approve_request', request_id=req.id) }}">
-                        <button type="submit" class="btn btn-success">Approve</button>
-                    </form>
+                    <div class="btn-group">
+                        <form method="POST" action="{{ url_for('approve_request', request_id=req.id) }}">
+                            <button type="submit" class="btn btn-success mx-1" style="padding: 0.5rem 1rem" data-bs-toggle="tooltip" title="Approve">
+                                <i class="bi bi-check fs-4"></i>
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ url_for('decline_request', request_id=req.id) }}">
+                            <button type="submit" class="btn btn-danger" style="padding: 0.5rem 1rem" data-bs-toggle="tooltip" title="Decline">
+                                <i class="bi bi-x fs-4"></i>
+                            </button>
+                        </form>
+                    </div>
                 </li>
             {% endfor %}
         </ul>
@@ -195,4 +204,10 @@
         </div>
     </div>
 </div>
+<script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTrigger) {
+        return new bootstrap.Tooltip(tooltipTrigger)
+    })
+</script>
 {% endblock %}
