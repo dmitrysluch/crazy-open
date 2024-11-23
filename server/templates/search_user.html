@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<div class="container mt-5">
+    <h1 class="text-center">Search people</h1>
+    <div class="mb-3">
+        <input type="text" id="search-input" class="form-control" placeholder="Jane the kinkster.">
+    </div>
+    <ul id="results-list" class="list-group"></ul>
+</div>
+
+<script>
+    const searchInput = document.getElementById('search-input');
+    const resultsList = document.getElementById('results-list');
+
+    const debounce = (func, delay) => {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), delay);
+        };
+    };
+
+    const fetchResults = async (query) => {
+        try {
+            const response = await fetch(`{{ url_for("search_social_links") }}?query=${encodeURIComponent(query)}`);
+            const results = await response.json();
+    
+            resultsList.innerHTML = ''; // Clear previous results
+    
+            if (results.length === 0) {
+                resultsList.innerHTML = `<li class="list-group-item">No results found.</li>`;
+            } else {
+                results.forEach(item => {
+                    resultsList.innerHTML += `
+                        <li class="list-group-item d-flex align-items-center">
+                            <a href="/dashboard?user_id=${item.id}" class="d-flex align-items-center     text-decoration-none w-100">
+                                <img src="${item.photo_url}" alt="User Photo" class="rounded-circle me-3" style="width: 50px; height: 50px;">
+                                <div>
+                                    <strong>${item.username}</strong><br>
+                                    ${ item.platform ? '<span>' + item.platform + ': ' + item.social_link + '</span>': '<i>-</i>'}
+                                </div>
+                            </a>
+                        </li>
+                    `;
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching results:', error);
+            resultsList.innerHTML = `<li class="list-group-item text-danger">An error occurred while fetching results.</li>`;
+        }
+    };
+
+
+    // Use debounce to avoid too many requests
+    searchInput.addEventListener('input', debounce((e) => {
+        const query = e.target.value.trim();
+        if (query) {
+            fetchResults(query);
+        } else {
+            resultsList.innerHTML = ''; // Clear results if query is empty
+        }
+    }, 300)); // 300ms debounce
+</script>
+{% endblock %}

@@ -4,7 +4,7 @@ from forms import RegistrationForm, LoginForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import flash, render_template, redirect, url_for, request, jsonify
 from flask_login import login_user, login_required, logout_user, current_user
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from sqlalchemy.exc import IntegrityError
 from functools import wraps
 import uuid
@@ -327,3 +327,87 @@ def decline_request(request_id):
 
     flash('Interaction request declined.', 'info')
     return redirect(url_for('dashboard'))
+
+@app.route('/search_page', methods=['GET'])
+@verified_only
+def search_page():
+    return render_template('search_user.html')
+
+@app.route('/search_social_links', methods=['GET'])
+@verified_only
+def search_social_links():
+    query = request.args.get('query', '').strip()
+    
+    if not query:
+        return jsonify([])  # Return empty list if no query
+
+    # Filter for visible or search-only links matching the query
+    results = (
+        db.session.query(SocialLink, User)
+        .join(User, SocialLink.user_id == User.id)
+        .filter(
+            SocialLink.visibility.in_([VisibilityState.SEARCH_ONLY, VisibilityState.VISIBLE]),
+            SocialLink.link.ilike(f"%{query}%"),
+            User.id != current_user.id,
+        )
+        .limit(10)
+        .all()
+    )
+
+    # Prepare results as a list of dictionaries
+    response_data = {}
+    for link, user in results:
+        response_data[user.id] = {
+            'id': user.id,
+            'username': user.username,
+            'social_link': link.link,
+            'platform': link.platform,
+            'photo_url': user.photo_url or '/static/placeholder.png'
+        }
+        if link.visibility == VisibilityState.VISIBLE:
+            response_data[user.id].update({
+                'social_link': link.link,
+                'platform': link.platform,
+            })
+    
+    results = (
+        db.session.query(User)
+        .filter(
+            User.email_visibility.in_([VisibilityState.SEARCH_ONLY, VisibilityState.VISIBLE]),
+            User.email.ilike(f"%{query}%"),
+            User.id != current_user.id,
+        )
+        .limit(10)
+        .all()
+    )
+
+    for user in results:
+        response_data[user.id] = {
+            'id': user.id,
+            'username': user.username,
+            'photo_url': user.photo_url or '/static/placeholder.png'
+        }
+        if user.email_visibility == VisibilityState.VISIBLE:
+            response_data[user.id].update({
+                'social_link': user.email,
+                'platform': 'email',
+            })
+
+    results = (
+        db.session.query(User)
+        .filter(
+            User.username.ilike(f"%{query}%"),
+            User.id != current_user.id,
+        )
+        .limit(10)
+        .all()
+    )
+
+    for user in results:
+        response_data[user.id] = {
+            'id': user.id,
+            'username': user.username,
+            'photo_url': user.photo_url or '/static/placeholder.png'
+        }
+
+    return jsonify(sorted(response_data.values(), key=lambda x: x['username'])[:10])
