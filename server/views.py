@@ -443,6 +443,10 @@ def process_qr_interaction_request():
         target_user_id = current_user.id
         requester_user_id = interaction_data['requester_user_id']
 
+        if requester_user_id == target_user_id:
+            flash("Masturbation doesn't counts")
+            return redirect(url_for("dashboard"))
+
         # Handle form submission
         if form.validate_on_submit():
             # Add the interaction to the database
