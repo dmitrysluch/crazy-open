@@ -347,7 +347,7 @@ def search_social_links():
         .join(User, SocialLink.user_id == User.id)
         .filter(
             SocialLink.visibility.in_([VisibilityState.SEARCH_ONLY, VisibilityState.VISIBLE]),
-            SocialLink.link.ilike(f"%{query}%"),
+            func.lower(SocialLink.link).contains(query, autoescape=True),
             User.id != current_user.id,
         )
         .limit(10)
@@ -372,7 +372,7 @@ def search_social_links():
         db.session.query(User)
         .filter(
             User.email_visibility.in_([VisibilityState.SEARCH_ONLY, VisibilityState.VISIBLE]),
-            User.email.ilike(f"%{query}%"),
+            func.lower(User.email).contains(query, autoescape=True),
             User.id != current_user.id,
         )
         .limit(10)
@@ -394,7 +394,7 @@ def search_social_links():
     results = (
         db.session.query(User)
         .filter(
-            User.username.ilike(f"%{query}%"),
+            func.lower(User.username).contains(query, autoescape=True),
             User.id != current_user.id,
         )
         .limit(10)
