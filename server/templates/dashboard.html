@@ -130,6 +130,9 @@
     <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#interactionModal">
         Request Interaction
     </button>
+    {% else %}
+    <h2 class="mt-4">Request interaction with QR</h2>
+    <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#qr-modal">Generate QR</button>
     {% endif %}
 
     <h2 class="mt-4">Interaction Statistics</h2>
@@ -144,7 +147,7 @@
     {% else %}
         <p>No interactions recorded yet.</p>
     {% endif %}
-
+    {% if own_page %}
     <!-- Modal for Adding Social Network -->
     <div class="modal fade" id="addSocialModal" tabindex="-1" aria-labelledby="addSocialModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -172,6 +175,8 @@
             </div>
         </div>
     </div>
+    {% endif %}
+    {% if not own_page %}
     <!-- Interaction Request Modal -->
     <div class="modal fade" id="interactionModal" tabindex="-1" aria-labelledby="interactionModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -203,7 +208,60 @@
             </div>
         </div>
     </div>
+    {% endif %}
+    {% if own_page %}
+    <div id="qr-modal" class="modal fade" tabindex="-1" aria-labelledby="interactionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Interaction QR Code</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="interactionType" class="form-label">Interaction Type</label>
+                        <select class="form-select" id="qrInteractionType" name="interaction_type" required>
+                            {% for interaction_type in interaction_types %}
+                                <option value="{{ interaction_type.id }}" title="{{ interaction_type.description }}">{{     interaction_type.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button id="generate-qr" class="btn btn-primary w-100">Generate</button>
+                    <div id="qr-code" class="d-flex align-items-center justify-content-center mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
+<script>
+    document.getElementById('generate-qr').addEventListener('click', async () => {
+        const interactionTypeId = document.getElementById('qrInteractionType').value;
+    
+        // Make a request to generate the QR code URL. 
+        // It DOES NOT alter DB so no CSRF protection is needed.
+        const response = await fetch('/generate_interaction_qr', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type_id: interactionTypeId })
+        });
+    
+        const data = await response.json();
+    
+        // Generate the QR code
+        const qrCodeElement = document.getElementById('qr-code');
+        qrCodeElement.innerHTML = ''; // Clear any previous QR code
+    
+        QrCreator.render({
+            text: data.qr_url,
+            radius: 0.5, // 0.0 to 0.5
+            ecLevel: 'Q', // L, M, Q, H
+            fill: '#851d7b', // foreground color
+            background: 'white', // color or null for transparent
+            size: 200 // in pixels
+            }, document.querySelector('#qr-code'));
+        });
+</script>
 <script>
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
     var tooltipList = tooltipTriggerList.map(function (tooltipTrigger) {

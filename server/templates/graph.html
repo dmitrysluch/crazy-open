@@ -109,6 +109,8 @@
 
     function updateGraph(links) {
         // Update links
+        nodeIDs = nodes.map((node)=>node.id)
+        links = links.filter((link)=>(nodeIDs.includes(link.source) && nodeIDs.includes(link.target)))
         const updatedLinks = lg.selectAll(".link")
             .data(links, d => `${d.source.id}-${d.target.id}`);
         updatedLinks.exit().remove();

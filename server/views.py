@@ -1,6 +1,6 @@
 from wsgi import app, serializer
 from models import db, User, SocialLink, InteractionType, InteractionRequest, Interaction, VisibilityState
-from forms import RegistrationForm, LoginForm
+from forms import RegistrationForm, LoginForm, InteractionAcceptForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import flash, render_template, redirect, url_for, request, jsonify
 from flask_login import login_user, login_required, logout_user, current_user
@@ -12,6 +12,7 @@ from PIL import Image
 import base64
 from io import BytesIO
 from utils import send_verification_email
+from itsdangerous import BadSignature
 
 def logged_out_only(view_function):
     @wraps(view_function)
@@ -155,7 +156,7 @@ def dashboard():
         return redirect(url_for('dashboard'))
     
     if 'user_id' in request.args and request.args['user_id'] != current_user.get_id():
-        user = User.query.filter_by(id=request.args['user_id']).first()
+        user = User.query.filter_by(id=request.args['user_id'], email_verified=True).one_or_404()
         own_page = False
     else:
         user = current_user
@@ -231,7 +232,7 @@ def update_visibility():
 @verified_only
 def graph():
     # Fetch all users and interactions
-    users = User.query.all()
+    users = User.query.filter_by(email_verified=True).all()
     nodes = [{"id": user.id, "name": user.username, "avatar": user.photo_url } for user in users]
     interaction_types = InteractionType.query.all()
 
@@ -409,3 +410,57 @@ def search_social_links():
         }
 
     return jsonify(sorted(response_data.values(), key=lambda x: x['username'])[:10])
+
+# This is CSRF safe as we do not write anything to DB.
+# If this behavior is changed USE WTFORMS for CSRF safety.
+@app.route('/generate_interaction_qr', methods=['POST'])
+@verified_only
+def generate_interaction_qr():
+    # Extract data from the request
+    interaction_type_id = request.json.get('type_id')
+
+    # Serialize the interaction data
+    serialized_data = serializer.dumps({
+        'interaction_type_id': interaction_type_id,
+        'requester_user_id': current_user.id
+    })
+
+    # Generate the QR URL
+    qr_url = url_for('process_qr_interaction_request', data=serialized_data, _external=True)
+
+    return jsonify({'qr_url': qr_url})
+
+@app.route('/qr', methods=['GET', 'POST'])
+@verified_only
+def process_qr_interaction_request():
+    serialized_data = request.args.get('data')
+    form = InteractionAcceptForm()
+
+    try:
+        # Deserialize the interaction data
+        interaction_data = serializer.loads(serialized_data)
+        interaction_type_id = interaction_data['interaction_type_id']
+        target_user_id = current_user.id
+        requester_user_id = interaction_data['requester_user_id']
+
+        # Handle form submission
+        if form.validate_on_submit():
+            # Add the interaction to the database
+            new_interaction = Interaction(
+                user_1_id=requester_user_id,
+                user_2_id=target_user_id,
+                type_id=interaction_type_id
+            )
+            db.session.add(new_interaction)
+            db.session.commit()
+
+            flash('Interaction request accepted!', 'success')
+            return redirect(url_for('dashboard'))
+
+        requester = User.query.filter_by(id=requester_user_id).one_or_404()
+        interaction_type = InteractionType.query.filter_by(id=interaction_type_id).one()
+        return render_template('interaction_qr.html', form=form, username=requester.username, interaction_type_str=interaction_type.name)
+    except BadSignature:
+        flash("Invalid QR", category="danger")
+        return redirect(url_for("dashboard"))
+

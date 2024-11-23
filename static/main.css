@@ -79,3 +79,9 @@ body {
     width: 1.5em;
     height: 1.5em;
 }
+
+#qr-code canvas {
+    background: white;
+    padding: 20px;
+    border-radius: calc( 0.7rem - 1px );
+}

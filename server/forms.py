@@ -26,3 +26,6 @@ class LoginForm(FlaskForm):
         DataRequired()
     ])
     submit = SubmitField('Login')
+
+class InteractionAcceptForm(FlaskForm):
+    submit = SubmitField('Accept')
