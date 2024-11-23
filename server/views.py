@@ -360,8 +360,6 @@ def search_social_links():
         response_data[user.id] = {
             'id': user.id,
             'username': user.username,
-            'social_link': link.link,
-            'platform': link.platform,
             'photo_url': user.photo_url or '/static/placeholder.png'
         }
         if link.visibility == VisibilityState.VISIBLE:
