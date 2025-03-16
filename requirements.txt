@@ -31,3 +31,4 @@ WTForms==3.2.1
 zope.event==5.0
 zope.interface==7.1.1
 psycopg2
+authlib==1.5.1
