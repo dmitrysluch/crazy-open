@@ -24,6 +24,12 @@
             <div class="text-center">
                 {{ form.submit(class="btn btn-primary w-100") }}
             </div>
+            <div class="text-center mt-1">
+                <a href="{{ url_for('google_login') }}" class="btn btn-light w-100 d-flex align-items-center justify-content-center" style="background: white">
+                    <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo" width="24" height="24" class="me-2">
+                    <span style="color: black">Sign in with Google</span>
+                </a>
+            </div>
         </form>
     </div>
 </div>

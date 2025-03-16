@@ -1,4 +1,4 @@
-from wsgi import app, serializer
+from wsgi import app, serializer, oauth
 from models import db, User, SocialLink, InteractionType, InteractionRequest, Interaction, VisibilityState
 from forms import RegistrationForm, LoginForm, InteractionAcceptForm
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -37,7 +37,10 @@ def verified_only(view_function):
 def index():
     return render_template("index.html")
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register')
+def register():
+    return redirect(url_for('login'))
+# @app.route('/register', methods=['GET', 'POST'])
 @logged_out_only
 def register():
     form = RegistrationForm()
@@ -132,12 +135,52 @@ def login():
 
     return render_template('login.html', form=form)
 
+@app.route('/google_login')
+def google_login():
+    redirect_uri = url_for('authorize', _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+@app.route('/authorize')
+def authorize():
+    token = oauth.google.authorize_access_token()
+    user_info = token.get('userinfo')
+    # Process user info and create session
+    username = user_info['name']
+    email = user_info['email']
+    user = User.query.filter_by(email=email, is_google=True).first()
+    if user is None:
+        new_user = User(username=username, email=email, password_hash='', photo_url=user_info['picture'], is_google=True, email_verified=True)
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()  # Rollback the session to prevent conflicts
+            # Check which field caused the issue
+            if User.query.filter_by(username=username).first():
+                flash("User with same username exists", "danger")
+            elif User.query.filter_by(email=email).first():
+                flash("Email is already registered. Please use a different email.", "danger")
+            else:
+                flash("An unexpected error occurred. Please try again.", "danger")
+            return redirect(url_for("login"))
+        login_user(new_user)
+        return redirect(url_for("dashboard"))
+    else:
+        user = User.query.filter_by(email=email, is_google=True).first()
+
+        if user and user.is_google:
+            login_user(user)  # Log in the user
+            flash('Login successful!', 'success')
+            return redirect(url_for('dashboard'))  # Redirect to dashboard or home page
+        else:
+            flash('Invalid email or password. Please try again.', 'danger')
+
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     flash('You have been logged out.', 'info')
-    return redirect(url_for('register'))  # Redirect to register or login page
+    return redirect(url_for('login'))  # Redirect to register or login page
 
 @app.route('/dashboard', methods=['GET', 'POST'])
 @verified_only

@@ -21,6 +21,7 @@ class User(db.Model):
     photo_url = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     social_links = db.relationship('SocialLink', backref='user', lazy=True)
+    is_google = db.Column(db.Boolean, default=False, nullable=False)
 
     def is_active(self):
         return True # No bans yet

@@ -7,6 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from itsdangerous import URLSafeTimedSerializer
+from authlib.integrations.flask_client import OAuth
 import os
 
 # Import models from your models file
@@ -35,6 +36,16 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
+oauth = OAuth(app)
+
+google = oauth.register(
+    name='google',
+    client_id=os.getenv('GOOGLE_CLIENT_ID', 'Crazy open'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET', 'Crazy open'),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
 
 
 import views
